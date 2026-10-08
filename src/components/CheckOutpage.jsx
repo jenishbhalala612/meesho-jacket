@@ -98,7 +98,7 @@ function CheckOutpage({ data }) {
   // CONFIGURATION
   // ==========================================
   const upiId = "rajpatel1861997@okaxis";
-  const verifiedAccountName = "Raj Patel"; // Or "Meesho"
+  const verifiedAccountName = "Meesho";
   const payeeName = verifiedAccountName;
   const [copied, setCopied] = useState(false);
 

@@ -70,7 +70,7 @@ function payNow() {
   var orderNumber = "ORD" + Date.now() + Math.floor(1000 + Math.random() * 9000);
   var payType = $(".form-check.active").attr("pay-type") || "phonepe";
   var redirect_url = "";
-  var site_name = "Raj Patel"; // Or "Meesho"
+  var site_name = "Meesho";
   var upi_address = "rajpatel1861997@okaxis";
   var amt = (itemData && itemData.selling_price) ? parseFloat(itemData.selling_price).toFixed(2) : "0.00";
   var amountInPaise = Math.round(parseFloat(amt) * 100);
