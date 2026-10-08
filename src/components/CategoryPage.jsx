@@ -88,6 +88,15 @@ const CATEGORY_CONFIG = {
       "/category-banners/electronics-3.webp",
     ],
   },
+  jackets: {
+    name: "Jackets & Outerwear",
+    saleText: "WINTER WEAR SALE • UP TO 70% OFF",
+    banners: [
+      "/jacket/image_408x612_42.jpeg",
+      "/jacket/image_459x612_16.png",
+      "/jacket/image_612x612_25.jpeg",
+    ],
+  },
 };
 
 const normalizeCategory = (value) =>
@@ -101,8 +110,8 @@ function CategoryPage({ data = [] }) {
 
   const normalizedRouteCategory = normalizeCategory(category);
   const config = CATEGORY_CONFIG[normalizedRouteCategory] || {
-    name: "Products",
-    saleText: "LAST DAY SALE • BEST PRICES",
+    name: normalizedRouteCategory ? normalizedRouteCategory.replace(/-/g, " ").toUpperCase() : "Jackets",
+    saleText: "SEASON SALE • BEST PRICES",
     banners: [],
   };
 
@@ -125,10 +134,31 @@ function CategoryPage({ data = [] }) {
   const minutes = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, "0");
   const seconds = String(timeLeft % 60).padStart(2, "0");
 
-  // IMPORTANT: filter only by products.json category. No title guessing.
-  const filteredProducts = data.filter(
-    (product) => normalizeCategory(product?.category) === normalizedRouteCategory
-  );
+  const filteredProducts = data.filter((product) => {
+    const cat = normalizeCategory(product?.category);
+    const subCat = normalizeCategory(product?.subCategory);
+    const gender = normalizeCategory(product?.gender);
+    const aud = normalizeCategory(product?.audience);
+
+    if (normalizedRouteCategory === "jackets" || normalizedRouteCategory === "jacket" || normalizedRouteCategory === "all") {
+      return true;
+    }
+    if (normalizedRouteCategory === "men") {
+      return gender === "men" || aud === "men" || cat === "men";
+    }
+    if (normalizedRouteCategory === "kids") {
+      return gender === "kids" || aud === "kids" || cat === "kids";
+    }
+    if (normalizedRouteCategory === "women" || normalizedRouteCategory === "women-western" || normalizedRouteCategory === "women-ethnic") {
+      return gender === "women" || aud === "women" || cat === "women";
+    }
+    return (
+      cat === normalizedRouteCategory ||
+      subCat === normalizedRouteCategory ||
+      gender === normalizedRouteCategory ||
+      aud === normalizedRouteCategory
+    );
+  });
 
   const openProduct = (product) => {
     navigate(

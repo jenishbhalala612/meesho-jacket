@@ -793,7 +793,7 @@ function HomePage({ data }) {
                     {/* IMAGE */}
 
                     <LazyloaderImage
-                      src={product?.image?.[0]}
+                      src={Array.isArray(product?.image) ? product.image[0] : (product?.image || product?.images?.[0])}
                       className="
                         block
                         h-full

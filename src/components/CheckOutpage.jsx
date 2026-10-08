@@ -566,7 +566,7 @@ useEffect(() => {
 
                     <LazyImage
 
-                      src={dataitem?.image[0]}
+                      src={Array.isArray(dataitem?.image) ? dataitem.image[0] : (dataitem?.image || dataitem?.images?.[0])}
 
                       className="aspect-square w-full h-full object-cover"
 
@@ -868,7 +868,7 @@ useEffect(() => {
 
                 <LazyImage
 
-                  src={buydata[0]?.image[0]}
+                  src={Array.isArray(buydata[0]?.image) ? buydata[0].image[0] : (buydata[0]?.image || buydata[0]?.images?.[0])}
 
                   className="aspect-square w-full h-full object-cover"
 

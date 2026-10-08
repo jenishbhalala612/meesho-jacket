@@ -24,26 +24,111 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   /* =========================================
-     LOAD PRODUCTS
+     LOAD PRODUCTS (JACKETS)
   ========================================= */
 
-  useEffect(() => {
-    fetch("/products.json")
-      .then((r) => r.json())
-      .then((productdata) => {
-        setData(
-          productdata.map((d) => ({
-            ...d,
-            rate: (Math.random() * 1.5 + 3.5).toFixed(1),
-            ratenum: Math.floor(Math.random() * 99901 + 100),
-          }))
-        );
+  const normalizeImagePath = (src) => {
+    if (!src) return "";
+    return String(src)
+      .replace(/^\/assets\/jacket\//, "/jacket/")
+      .replace(/^assets\/jacket\//, "/jacket/")
+      .replace(/^jacket\//, "/jacket/");
+  };
 
+  const transformProduct = (d) => {
+    // Normalise images list
+    const rawImages = Array.isArray(d.images) && d.images.length > 0
+      ? d.images
+      : (Array.isArray(d.image) ? d.image : (d.image ? [d.image] : []));
+    let normalizedImages = rawImages.map(normalizeImagePath).filter(Boolean);
+    if (normalizedImages.length === 0 && d.image) {
+      normalizedImages = [normalizeImagePath(d.image)];
+    }
+
+    // Sizes
+    const sizes = Array.isArray(d.sizes) && d.sizes.length > 0
+      ? d.sizes.map((s) => (typeof s === "string" ? s : s.label || s.size))
+      : (Array.isArray(d.size) && d.size.length > 0 ? d.size : ["S", "M", "L", "XL", "XXL"]);
+
+    // Price & Cancelprice
+    const price = String(d.price ?? "");
+    const cancelprice = String(d.mrp || d.cancelprice || Math.round(Number(d.price || 0) * 1.4));
+
+    // Description fallback
+    const highlightsHtml = d.highlights
+      ? Object.entries(d.highlights)
+          .map(([k, v]) => `<p><strong>${k}:</strong> ${v}</p>`)
+          .join("")
+      : "";
+    const detailsHtml = d.additionalDetails
+      ? Object.entries(d.additionalDetails)
+          .map(([k, v]) => `<p><strong>${k}:</strong> ${v}</p>`)
+          .join("")
+      : "";
+    const desc = d.desc || `
+      <p><strong>Product:</strong> ${d.title}</p>
+      ${highlightsHtml}
+      <br/>
+      ${detailsHtml}
+      <br/>
+      <p><strong>Return Policy:</strong> ${d.returnPolicy || "7-day Returns"}</p>
+      <p><strong>Delivery:</strong> Free Delivery & Cash on Delivery Available</p>
+    `.trim();
+
+    // Similar products images
+    const similarProducts = (d.similarProducts || []).map((sp) => ({
+      ...sp,
+      image: normalizeImagePath(sp.image),
+    }));
+
+    // Reviews images
+    const reviews = (d.reviews || []).map((r) => ({
+      ...r,
+      images: (r.images || []).map(normalizeImagePath),
+    }));
+
+    return {
+      ...d,
+      id: String(d.id),
+      image: normalizedImages,
+      images: normalizedImages,
+      price: price,
+      cancelprice: cancelprice,
+      mrp: Number(d.mrp || cancelprice || 0),
+      size: sizes,
+      sizes: d.sizes || sizes.map((s) => ({ label: s, inStock: true })),
+      rate: String(d.rating || d.rate || (Math.random() * 1.5 + 3.5).toFixed(1)),
+      ratenum: d.ratingCount || d.ratenum || Math.floor(Math.random() * 99901 + 100),
+      reviewCount: d.reviewCount || (d.reviews ? d.reviews.length : 1681),
+      desc: desc,
+      category: d.category || "jackets",
+      similarProducts: similarProducts,
+      reviews: reviews,
+    };
+  };
+
+  useEffect(() => {
+    fetch("/jacket-products.json")
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load jacket-products.json");
+        return r.json();
+      })
+      .then((productdata) => {
+        setData(productdata.map(transformProduct));
         setLoading(false);
       })
       .catch((e) => {
-        console.log(e);
-        setLoading(false);
+        console.error("Error loading jacket products:", e);
+        fetch("/products.json")
+          .then((r) => r.json())
+          .then((productdata) => {
+            setData(productdata.map(transformProduct));
+            setLoading(false);
+          })
+          .catch((err) => {
+            console.error(err);
+            setLoading(false);
+          });
       });
   }, []);
 

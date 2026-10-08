@@ -74,18 +74,29 @@ function Productpage({ data }) {
   const [filterdata, setfilterdata] = useState([]);
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+  }, [id]);
+
   useEffect(() => {
-    const filterdata = apiData?.filter((dataf) => dataf?.id === id);
+    if (Array.isArray(data) && data.length > 0) {
+      setapiData(data);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    const found = apiData?.find((dataf) => String(dataf?.id) === String(id));
+    const filterdata = found ? [found] : [];
     setfilterdata(filterdata);
-    setSelecedSize(filterdata[0]?.size[0]);
-    setSelectedImageIndex(0);
-    localStorage.setItem("idname", JSON.stringify({ id, name }));
-  }, [id, name, apiData?.length]);
+    if (filterdata[0]) {
+      const defaultSize = filterdata[0]?.size?.[0] || filterdata[0]?.sizes?.[0]?.label || "M";
+      setSelecedSize(defaultSize);
+      setSelectedImageIndex(0);
+      localStorage.setItem("idname", JSON.stringify({ id, name }));
+    }
+  }, [id, name, apiData]);
+
   const similerproductclick = (id, name) => {
     window.scrollTo(0, 0);
-    // dispatch(productViewAction(id));
-    navigate("/productdetails/" + id + "/" + name);
+    navigate("/productdetails/" + id + "/" + encodeURIComponent(name || "jacket"));
   };
   const filtersimilarproduct = apiData
     ?.slice(
@@ -393,30 +404,28 @@ function Productpage({ data }) {
             </div>
           )}
         </div>
-        {/* <div className="pt-[16px] px-[15px]">
-          <p className="text-[#8b8ba3] text-[15px] font-bold">
-            1 Similar Products
-          </p>
-          <div className="mt-[10px] w-full relative">
-            <Swiper ref={silderrefdata} slidesPerView={1} spaceBetween={8}>
-              {filtersimilarproduct?.map((dataimg, inx) => {
+        {filterdata[0]?.similarProducts?.length > 0 && (
+          <div className="bg-white px-[16px] py-[14px] mb-2 border-b border-[#e5e5e5]">
+            <p className="text-[#353543] text-[14px] font-[600] mb-[10px]">
+              Similar Jackets & Styles ({filterdata[0].similarProducts.length})
+            </p>
+            <div className="flex gap-[10px] overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              {filterdata[0].similarProducts.map((sp, idx) => {
+                const fullProd = apiData?.find((p) => String(p.id) === String(sp.id));
                 return (
-                  <SwiperSlide key={inx}>
-                    <div className="flex justify-center items-center w-full">
-                      <LazyImage
-                        onClick={() => {
-                          similerproductclick(dataimg?.id, dataimg?.title);
-                        }}
-                        src={dataimg?.image[0]}
-                        className="object-cover h-[70px]"
-                      />
-                    </div>
-                  </SwiperSlide>
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => similerproductclick(sp.id, fullProd?.title || "jacket")}
+                    className="shrink-0 w-[68px] h-[68px] rounded-[8px] overflow-hidden border border-[#d9d9d9] hover:border-[#9f2089]"
+                  >
+                    <LazyImage src={sp.image} className="w-full h-full object-cover" />
+                  </button>
                 );
               })}
-            </Swiper>
+            </div>
           </div>
-        </div> */}
+        )}
         <div className="bg-[rgb(234_234_242)] pb-2 w-full">
           <div className="w-full pt-[8px] px-[16px] bg-white pb-[18px]">
             <div
@@ -522,26 +531,28 @@ function Productpage({ data }) {
                 ))}
             </div>
 
-            <div className="w-full mt-[10px]">
-              <div className="flex items-center bg-green-100 text-green-600 rounded-full text-[15px] font-[500] w-fit px-2 py-[2px]">
-                ₹260 with 1 Special Offer
-                <svg
-                  width="16"
-                  height="16"
-                  className="ml-1"
-                  fill="#91E5BD"
-                  xmlns="http://www.w3.org/2000/svg"
-                  iconsize="16"
-                  class="sc-gswNZR EaPUQ"
-                >
-                  <rect width="16" height="16" rx="8"></rect>
-                  <path
-                    d="M6.387 4.59a.647.647 0 0 0 0 .908L8.86 8l-2.474 2.502a.647.647 0 0 0 0 .91.63.63 0 0 0 .899 0l2.927-2.96a.647.647 0 0 0 0-.91l-2.927-2.96a.636.636 0 0 0-.9.007Z"
-                    fill="#038D63"
-                  ></path>
-                </svg>
+            {filterdata[0]?.specialOfferPrice ? (
+              <div className="w-full mt-[10px]">
+                <div className="flex items-center bg-green-100 text-green-600 rounded-full text-[15px] font-[500] w-fit px-2 py-[2px]">
+                  ₹{filterdata[0]?.specialOfferPrice} {filterdata[0]?.specialOffer?.label || "with Special Offer"}
+                  <svg
+                    width="16"
+                    height="16"
+                    className="ml-1"
+                    fill="#91E5BD"
+                    xmlns="http://www.w3.org/2000/svg"
+                    iconsize="16"
+                    class="sc-gswNZR EaPUQ"
+                  >
+                    <rect width="16" height="16" rx="8"></rect>
+                    <path
+                      d="M6.387 4.59a.647.647 0 0 0 0 .908L8.86 8l-2.474 2.502a.647.647 0 0 0 0 .91.63.63 0 0 0 .899 0l2.927-2.96a.647.647 0 0 0 0-.91l-2.927-2.96a.636.636 0 0 0-.9.007Z"
+                      fill="#038D63"
+                    ></path>
+                  </svg>
+                </div>
               </div>
-            </div>
+            ) : null}
             <div className="w-full mt-[10px] flex gap-1 items-center justify-start">
               <p className="text-[13px] text-black">Daily Deals</p>
               <div className="inline-flex items-center whitespace-nowrap font-nums bg-orange-200 rounded-md h-[20px] px-[8px] border border-orange-500">
@@ -587,7 +598,7 @@ function Productpage({ data }) {
                 </svg>
               </div>
               <p className="text-[rgb(139_139_163)] font-[500] text-[11px]">
-                {filterdata[0]?.ratenum?.toLocaleString()}Ratings, 1076 Reviews
+                {filterdata[0]?.ratenum?.toLocaleString()} Ratings, {filterdata[0]?.reviewCount ? Number(filterdata[0].reviewCount).toLocaleString() : "1,076"} Reviews
               </p>
               <span className="bg-[rgb(206_206_222)] w-[4px] h-[4px] rounded-full mx-[8px] inline-block"></span>
               <LazyImage
@@ -672,7 +683,7 @@ function Productpage({ data }) {
               <div className="w-[calc(100%_-_48px)]">
                 <div className="flex justify-between items-center">
                   <span className="text-[15px] text-[#353543] uppercase font-[500] pl-2 pr-4">
-                    {vendorName}
+                    {filterdata[0]?.seller?.name || vendorName}
                   </span>
                   <button
                     type="button"
@@ -726,7 +737,7 @@ function Productpage({ data }) {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[#353543] font-[500] text-[15px]">6</p>
+                  <p className="text-[#353543] font-[500] text-[15px]">{filterdata[0]?.seller?.productCount || "1,251"}</p>
                   <p className="text-[rgb(139_139_163)] pt-1 font-[500] text-[13px]">
                     Products
                   </p>
@@ -773,17 +784,26 @@ function Productpage({ data }) {
                       </svg>
                     </div>
                     <p className="text-[rgb(139_139_163)] font-[500] text-[11px]">
-                      {filterdata[0]?.ratenum?.toLocaleString()}Ratings,
+                      {filterdata[0]?.ratenum?.toLocaleString()} Ratings,
                     </p>
                     <p className="text-[rgb(139_139_163)] font-[500] text-[11px]">
-                      1076 Reviews
+                      {filterdata[0]?.reviewCount ? Number(filterdata[0].reviewCount).toLocaleString() : "1,076"} Reviews
                     </p>
                   </div>
                 </div>
               </div>
               <div className="w-[calc(100%_-_110px)]">
                 <div className="flex flex-col w-full">
-                  {reatingtextandcolor?.map((datarateing) => {
+                  {(filterdata[0]?.ratingSummary?.breakdown
+                    ? [
+                        { name: "Excellent", num: filterdata[0].ratingSummary.breakdown.excellent, color: "#06A759", width: `${Math.min(100, Math.round((filterdata[0].ratingSummary.breakdown.excellent / (filterdata[0].ratenum || 1)) * 100))}%` },
+                        { name: "Very Good", num: filterdata[0].ratingSummary.breakdown.veryGood, color: "#06A759", width: `${Math.min(100, Math.round((filterdata[0].ratingSummary.breakdown.veryGood / (filterdata[0].ratenum || 1)) * 100))}%` },
+                        { name: "Good", num: filterdata[0].ratingSummary.breakdown.good, color: "#F4B743", width: `${Math.min(100, Math.round((filterdata[0].ratingSummary.breakdown.good / (filterdata[0].ratenum || 1)) * 100))}%` },
+                        { name: "Average", num: filterdata[0].ratingSummary.breakdown.average, color: "#EC803D", width: `${Math.min(100, Math.round((filterdata[0].ratingSummary.breakdown.average / (filterdata[0].ratenum || 1)) * 100))}%` },
+                        { name: "Poor", num: filterdata[0].ratingSummary.breakdown.poor, color: "#F52833", width: `${Math.min(100, Math.round((filterdata[0].ratingSummary.breakdown.poor / (filterdata[0].ratenum || 1)) * 100))}%` },
+                      ]
+                    : reatingtextandcolor
+                  ).map((datarateing) => {
                     return (
                       <div className="flex-1 flex items-center gap-3 mb-1">
                         <div className="w-[61px] text-right">
@@ -831,7 +851,7 @@ function Productpage({ data }) {
                   })}
               </div>
             </div>
-            {randomReviews?.map((datashowreview, index) => {
+            {(filterdata[0]?.reviews?.length > 0 ? filterdata[0].reviews : randomReviews)?.map((datashowreview, index) => {
               return (
                 <div
                   key={index}
@@ -914,26 +934,38 @@ function Productpage({ data }) {
                     </p>
                   </div>
                   <div className="mt-[12px] w-full flex justify-start flex-wrap items-center gap-2">
-                    {filterdata?.length > 0 &&
-                      filterdata[0]?.image?.length > 0 &&
-                      [0, 1].map((offset) => {
-                        const images = filterdata[0].image;
-                        const imageIndex =
-                          (index * 2 + offset) % images.length;
-                        const reviewImage = images[imageIndex];
-
-                        return (
+                    {datashowreview?.images?.length > 0
+                      ? datashowreview.images.map((rImg, rIdx) => (
                           <div
-                            key={`${index}-${imageIndex}-${offset}`}
-                            className="w-[48px] h-[48px] overflow-hidden rounded"
+                            key={rIdx}
+                            className="w-[48px] h-[48px] overflow-hidden rounded border border-gray-200"
                           >
                             <LazyImage
-                              src={reviewImage}
+                              src={rImg}
                               className="w-full h-full object-cover aspect-square"
                             />
                           </div>
-                        );
-                      })}
+                        ))
+                      : filterdata?.length > 0 &&
+                        filterdata[0]?.image?.length > 0 &&
+                        [0, 1].map((offset) => {
+                          const images = filterdata[0].image;
+                          const imageIndex =
+                            (index * 2 + offset) % images.length;
+                          const reviewImage = images[imageIndex];
+
+                          return (
+                            <div
+                              key={`${index}-${imageIndex}-${offset}`}
+                              className="w-[48px] h-[48px] overflow-hidden rounded"
+                            >
+                              <LazyImage
+                                src={reviewImage}
+                                className="w-full h-full object-cover aspect-square"
+                              />
+                            </div>
+                          );
+                        })}
                   </div>
                   <div className="mt-2 mb-4 w-full flex gap-2 justify-start items-center">
                     <svg

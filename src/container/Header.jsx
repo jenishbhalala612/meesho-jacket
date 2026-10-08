@@ -119,7 +119,7 @@ const saleBanner =
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Try Saree, Kurti or Search by Product Code"
+              placeholder="Try Jacket, Bomber, Denim, Shacket..."
               className="
                 h-11
                 w-full
@@ -390,7 +390,7 @@ const saleBanner =
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products..."
+                placeholder="Search jackets, bombers, coats..."
                 className="
                   h-[42px]
                   w-full
