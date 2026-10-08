@@ -43,51 +43,55 @@ export default function PaymentPage() {
   // CHANGE YOUR REAL UPI DETAILS HERE
   // =========================================
 
+  // ==========================================
+  // CONFIGURATION
+  // ==========================================
   const upiId = "rajpatel1861997@okaxis";
-  const payeeName = "Meesho";
-  const aid = "uGICAgOD1lfiuLw";
+  const verifiedAccountName = "Raj Patel"; // Or "Meesho"
+  const payeeName = verifiedAccountName;
 
   // =========================================
   // OPEN UPI PAYMENT
   // =========================================
 
   const openUPIApp = (app = "upi") => {
-    if (!totalAmount || totalAmount <= 0) {
+    const numericAmount = Number(totalAmount);
+
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       alert("Invalid payment amount");
       return;
     }
 
-    if (!upiId) {
+    if (!upiId || !upiId.includes("@")) {
       alert("UPI ID not configured");
       return;
     }
 
-    dispatch(setCartTotalAction(totalAmount));
+    dispatch(setCartTotalAction(numericAmount));
 
-    const amount = Number(totalAmount).toFixed(2);
+    const formattedAmount = numericAmount.toFixed(2);
     const orderNote = `Order_${Date.now()}`;
+    const amountInPaise = Math.round(numericAmount * 100);
+
     const isIOS =
       typeof navigator !== "undefined" &&
       /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    const baseUpiQuery =
-      `pa=${encodeURIComponent(upiId)}` +
-      `&pn=${encodeURIComponent(payeeName)}` +
-      `&aid=${encodeURIComponent(aid)}` +
-      `&am=${encodeURIComponent(amount)}` +
-      `&cu=INR` +
-      `&tn=${encodeURIComponent(orderNote)}`;
 
     let paymentUrl = "";
 
     if (app === "phonepe") {
       if (isIOS) {
-        paymentUrl = `phonepe://pay?${baseUpiQuery}`;
+        paymentUrl =
+          `phonepe:upi://pay?pa=${encodeURIComponent(upiId)}` +
+          `&pn=${encodeURIComponent(verifiedAccountName)}` +
+          `&am=${formattedAmount}` +
+          `&cu=INR` +
+          `&tn=${encodeURIComponent(orderNote)}`;
       } else {
         const payload = {
           p2pPaymentCheckoutParams: {
             checkoutType: "COLLECT",
-            initialAmount: Math.round(Number(totalAmount) * 100),
+            initialAmount: amountInPaise,
             note: {
               type: "text",
               message: orderNote,
@@ -96,7 +100,7 @@ export default function PaymentPage() {
           },
           contact: {
             type: "EXTERNAL_MERCHANT",
-            name: payeeName,
+            name: verifiedAccountName,
             vpa: upiId,
           },
         };
@@ -105,12 +109,26 @@ export default function PaymentPage() {
           unescape(encodeURIComponent(JSON.stringify(payload)))
         );
 
-        paymentUrl = `phonepe://native?data=${encodeURIComponent(encodedPayload)}&id=p2ppayment`;
+        paymentUrl =
+          `phonepe://native?data=${encodeURIComponent(encodedPayload)}` +
+          `&id=p2ppayment`;
       }
     } else if (app === "paytm") {
-      paymentUrl = `paytmmp://pay?${baseUpiQuery}`;
+      paymentUrl =
+        `paytmmp://cash_wallet?pa=${encodeURIComponent(upiId)}` +
+        `&pn=${encodeURIComponent(verifiedAccountName)}` +
+        `&am=${formattedAmount}` +
+        `&cu=INR` +
+        `&tn=${encodeURIComponent(orderNote)}` +
+        `&featuretype=money_transfer`;
     } else {
-      paymentUrl = `upi://pay?${baseUpiQuery}`;
+      // BHIM / WhatsApp / Default UPI
+      paymentUrl =
+        `upi://pay?pa=${encodeURIComponent(upiId)}` +
+        `&pn=${encodeURIComponent(verifiedAccountName)}` +
+        `&am=${formattedAmount}` +
+        `&cu=INR` +
+        `&tn=${encodeURIComponent(orderNote)}`;
     }
 
     setShowPaymentOptions(false);
@@ -421,7 +439,7 @@ export default function PaymentPage() {
               <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 inline-block mx-auto my-1">
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(
-                    `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&aid=${aid}&am=${Number(totalAmount).toFixed(2)}&cu=INR`
+                    `upi://pay?pa=${upiId}&pn=${encodeURIComponent(verifiedAccountName)}&am=${Number(totalAmount).toFixed(2)}&cu=INR`
                   )}`}
                   alt="UPI Payment QR Code"
                   className="w-48 h-48 sm:w-52 sm:h-52 mx-auto object-contain rounded-lg"

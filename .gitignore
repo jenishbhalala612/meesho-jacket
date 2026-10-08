@@ -23,3 +23,7 @@ yarn-error.log*
 
 # Misc
 .DS_Store
+
+# Agent folders
+.agent/
+.agents/

